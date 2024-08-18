@@ -7,6 +7,7 @@ use std::env;
 use axum::Router;
 
 use controller::router::get_service_routes;
+use model::service_config::ServiceConfig;
 use scylla::{statement::Consistency, ExecutionProfile, Session, SessionBuilder};
 use strum_macros::EnumString;
 use tokio::net::TcpListener;
@@ -30,7 +31,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     set_tracing(&run_mode)?;
 
-    let cassandra_session = config_cassandra_session().await?;
+    let service_config = ServiceConfig::new(&run_mode)?;
+
+    let cassandra_session = config_cassandra_session(service_config).await?;
 
     let listener = TcpListener::bind("0.0.0.0:3000").await?;
 
@@ -44,20 +47,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
-
-async fn config_cassandra_session() -> Result<Session, Box<dyn std::error::Error>> {
-
-    let known_nodes = env::var("KNOWN_NODES").unwrap_or("127.0.0.1:9042".to_string());
-    let request_timeout_millis = env::var("REQUEST_TIMEOUT_MILLIS").unwrap_or("100".to_string()).parse::<u64>()?;
+async fn config_cassandra_session(service_config: ServiceConfig) -> Result<Session, Box<dyn std::error::Error>> {
 
     let execution_profile = ExecutionProfile::builder()
         .consistency(Consistency::LocalOne)
-        .request_timeout(Some(std::time::Duration::from_millis(request_timeout_millis)))
+        .request_timeout(Some(std::time::Duration::from_millis(service_config.request_timeout_millis)))
         .build();
     
     let scylla_session: Session = SessionBuilder::new()
-        .known_nodes(known_nodes.split(','))
+        .known_nodes(service_config.known_nodes.split(','))
         .default_execution_profile_handle(execution_profile.into_handle())
         .build()
         .await?;
