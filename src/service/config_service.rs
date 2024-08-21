@@ -1,17 +1,11 @@
 use config::{Config, ConfigError, File};
-use serde::Deserialize;
 use tracing::info;
 
-use crate::RunMode;
+use crate::{model::config::CassandraConfig, RunMode};
 
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct ServiceConfig {
-    pub known_nodes: String,
-    pub request_timeout_millis: u64,
-} 
 
-impl ServiceConfig {
+impl CassandraConfig {
     
     pub fn new(run_mode: &RunMode) -> Result<Self, ConfigError> {
 

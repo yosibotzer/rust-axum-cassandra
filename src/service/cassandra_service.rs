@@ -3,7 +3,7 @@ use std::sync::Arc;
 use scylla::{serialize::row::SerializeRow, QueryResult, Session};
 use tracing::error;
 
-use crate::model::{api::{TestBoolRequest, TestMapRequest, TestSetRequest}, row::TestRow};
+use crate::model::{api::{TestBoolRequest, TestMapRequest, TestSetRequest}, row::TestRow, service_state::ServiceState};
 
 
 const FETCH_TEST_CQL: &str = "select test_bool, test_set, test_map from rust.test where test_id = ?";
@@ -33,11 +33,11 @@ fn map_error(cassandra_error: Box<dyn std::error::Error>) -> InternalError {
     InternalError
 }
 
-pub async fn fetch(session: Arc<Session>, test_id: String) -> Result<Option<TestRow>, InternalError> {
+pub async fn fetch(service_state: Arc<ServiceState>, test_id: String) -> Result<Option<TestRow>, InternalError> {
 
     let cql_values = (test_id, );
 
-    let result = execute(&session, FETCH_TEST_CQL, cql_values).await?;
+    let result = execute(&service_state.session, FETCH_TEST_CQL, cql_values).await?;
 
     let test_option = result
         .maybe_first_row_typed::<TestRow>()
@@ -46,29 +46,29 @@ pub async fn fetch(session: Arc<Session>, test_id: String) -> Result<Option<Test
     Ok(test_option)
 }
 
-pub async fn set_test_bool(session: Arc<Session>, request: TestBoolRequest) -> Result<(), InternalError> {
+pub async fn set_test_bool(service_state: Arc<ServiceState>, request: TestBoolRequest) -> Result<(), InternalError> {
     
     let cql_values = (request.ttl, request.test_bool, request.test_id);
 
-    execute(&session, SET_TEST_BOOL_CQL, cql_values).await?;
+    execute(&service_state.session, SET_TEST_BOOL_CQL, cql_values).await?;
 
     Ok(())
 }
 
-pub async fn set_test_map(session: Arc<Session>, request: TestMapRequest) -> Result<(), InternalError> {
+pub async fn set_test_map(service_state: Arc<ServiceState>, request: TestMapRequest) -> Result<(), InternalError> {
     
     let cql_values = (request.ttl, request.test_map, request.test_id);
 
-    execute(&session, SET_TEST_MAP_CQL, cql_values).await?;
+    execute(&service_state.session, SET_TEST_MAP_CQL, cql_values).await?;
 
     Ok(())
 }
 
-pub async fn set_test_set(session: Arc<Session>, request: TestSetRequest) -> Result<(), InternalError> {
+pub async fn set_test_set(service_state: Arc<ServiceState>, request: TestSetRequest) -> Result<(), InternalError> {
     
     let cql_values = (request.ttl, request.test_set, request.test_id);
 
-    execute(&session, SET_TEST_SET_CQL, cql_values).await?;
+    execute(&service_state.session, SET_TEST_SET_CQL, cql_values).await?;
 
     Ok(())
 }

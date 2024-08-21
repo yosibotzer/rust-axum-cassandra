@@ -7,7 +7,7 @@ use std::env;
 use axum::Router;
 
 use controller::router::get_service_routes;
-use model::service_config::ServiceConfig;
+use model::{config::CassandraConfig, service_state};
 use scylla::{statement::Consistency, ExecutionProfile, Session, SessionBuilder};
 use strum_macros::EnumString;
 use tokio::net::TcpListener;
@@ -31,14 +31,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     set_tracing(&run_mode)?;
 
-    let service_config = ServiceConfig::new(&run_mode)?;
+    let cassandra_config = CassandraConfig::new(&run_mode)?;
 
-    let cassandra_session = config_cassandra_session(service_config).await?;
+    let cassandra_session = config_cassandra_session(&cassandra_config).await?;
+
+    let service_state = service_state::ServiceState {
+        config: cassandra_config,
+        session: cassandra_session,
+    };
 
     let listener = TcpListener::bind("0.0.0.0:3000").await?;
 
     let app = Router::new()
-        .merge(get_service_routes(cassandra_session));
+        .merge(get_service_routes(service_state));
     
     info!("starting server");
 
@@ -47,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn config_cassandra_session(service_config: ServiceConfig) -> Result<Session, Box<dyn std::error::Error>> {
+async fn config_cassandra_session(service_config: &CassandraConfig) -> Result<Session, Box<dyn std::error::Error>> {
 
     let execution_profile = ExecutionProfile::builder()
         .consistency(Consistency::LocalOne)
