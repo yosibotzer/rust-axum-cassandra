@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use scylla::{serialize::row::SerializeRow, QueryResult, Session};
+use scylla::{
+    client::session::Session,
+    response::query_result::QueryResult,
+    serialize::row::SerializeRow,
+};
 use tracing::error;
 
 use crate::model::{api::{TestBoolRequest, TestMapRequest, TestSetRequest}, row::TestRow, service_state::ServiceState};
@@ -21,7 +25,7 @@ async fn execute(session: &Session, cql : &str, values: impl SerializeRow) -> Re
         .map_err(|e| map_error(Box::new(e)))?;
     
     let query_result = session
-        .execute(&prepared, values)
+        .execute_unpaged(&prepared, values)
         .await
         .map_err(|e| map_error(Box::new(e)))?;
 
@@ -40,8 +44,8 @@ pub async fn fetch(service_state: Arc<ServiceState>, test_id: String) -> Result<
     let result = execute(&service_state.session, FETCH_TEST_CQL, cql_values).await?;
 
     let test_option = result
-        .maybe_first_row_typed::<TestRow>()
-        .map_err(|e| map_error(Box::new(e)))?;
+        .into_rows_result().map_err(|e| map_error(Box::new(e)))?
+        .maybe_first_row().map_err(|e| map_error(Box::new(e)))?;
 
     Ok(test_option)
 }

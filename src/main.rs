@@ -8,7 +8,8 @@ use axum::Router;
 
 use controller::router::get_service_routes;
 use model::{config::CassandraConfig, service_state};
-use scylla::{statement::Consistency, ExecutionProfile, Session, SessionBuilder};
+use scylla::client::{execution_profile::ExecutionProfile, session::Session, session_builder::SessionBuilder};
+use scylla::statement::Consistency;
 use strum_macros::EnumString;
 use tokio::net::TcpListener;
 use tracing::{info, level_filters::LevelFilter};

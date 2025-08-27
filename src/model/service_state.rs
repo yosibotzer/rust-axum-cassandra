@@ -1,4 +1,4 @@
-use scylla::Session;
+use scylla::client::session::Session;
 
 use super::config::CassandraConfig;
 
