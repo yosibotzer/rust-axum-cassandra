@@ -5,7 +5,6 @@ use scylla::{
     response::query_result::QueryResult,
     serialize::row::SerializeRow,
 };
-use tracing::error;
 
 use crate::model::{api::{TestBoolRequest, TestMapRequest, TestSetRequest}, row::TestRow, service_state::ServiceState};
 use crate::service::error::InternalError;

@@ -49,7 +49,7 @@ async fn fetch(State(service_state): State<Arc<ServiceState>>, Path(test_id): Pa
     let test_row_option = cassandra_service::fetch(service_state, test_id).await?;
 
     match test_row_option {
-        Some(test) => Ok(Json(test).into_response()),
+        Some(test_row) => Ok(Json(test_row).into_response()),
         None => Ok(StatusCode::NO_CONTENT.into_response())
     }
 }

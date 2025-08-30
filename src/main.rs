@@ -61,7 +61,7 @@ async fn config_cassandra_session(service_config: &CassandraConfig) -> Result<Se
         .build();
     
     let scylla_session: Session = SessionBuilder::new()
-        .known_nodes(service_config.known_nodes.split(','))
+        .known_nodes(&service_config.known_nodes)
         .default_execution_profile_handle(execution_profile.into_handle())
         .build()
         .await?;
