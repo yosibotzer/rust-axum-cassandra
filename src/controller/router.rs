@@ -12,13 +12,11 @@ use axum::{
 };
 
 use tower_http::compression::CompressionLayer;
-
+use tracing::error;
 use crate::model::service_state::ServiceState;
 use crate::service::cassandra_service;
 use crate::model::api::{TestBoolRequest, TestMapRequest, TestSetRequest};
-use crate::service::cassandra_service::InternalError;
-
-
+use crate::service::error::InternalError;
 
 pub fn get_service_routes(service_state : ServiceState) -> Router {
 
@@ -37,6 +35,7 @@ pub fn get_service_routes(service_state : ServiceState) -> Router {
 impl IntoResponse for InternalError {
     
     fn into_response(self) -> Response {
+        error!("Internal error: {:?}", self);
         StatusCode::INTERNAL_SERVER_ERROR.into_response()
     }
 }

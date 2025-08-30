@@ -14,7 +14,7 @@ impl CassandraConfig {
         info!("Loading config file: {}", file_name);
         
         let cnf = Config::builder()
-            .add_source(File::with_name(&format!("config/default")).required(true))
+            .add_source(File::with_name(&"config/default".to_string()).required(true))
             .add_source(File::with_name(&file_name).required(true))
             .add_source(config::Environment::with_prefix("APP"))
             .build()?;

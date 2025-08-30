@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let run_mode_str = env::var("RUN_MODE").unwrap_or_else(|_| RunMode::Dev.to_string());
 
-    let run_mode: RunMode = run_mode_str.parse()?;
+    let run_mode = run_mode_str.parse::<RunMode>()?;
 
     set_tracing(&run_mode)?;
 

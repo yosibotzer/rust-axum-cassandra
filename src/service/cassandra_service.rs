@@ -8,34 +8,29 @@ use scylla::{
 use tracing::error;
 
 use crate::model::{api::{TestBoolRequest, TestMapRequest, TestSetRequest}, row::TestRow, service_state::ServiceState};
-
+use crate::service::error::InternalError;
 
 const FETCH_TEST_CQL: &str = "select test_bool, test_set, test_map from rust.test where test_id = ?";
 const SET_TEST_BOOL_CQL: &str = "UPDATE rust.test using ttl ? SET test_bool = ? WHERE test_id = ?";
 const SET_TEST_MAP_CQL: &str = "UPDATE rust.test using ttl ? SET test_map = test_map + ? WHERE test_id = ?";
 const SET_TEST_SET_CQL: &str = "UPDATE rust.test using ttl ? SET test_set = test_set + ? WHERE test_id = ?";
 
-pub struct InternalError;
+
 
 async fn execute(session: &Session, cql : &str, values: impl SerializeRow) -> Result<QueryResult, InternalError> {
 
     let prepared = session
         .prepare(cql)
-        .await
-        .map_err(|e| map_error(Box::new(e)))?;
+        .await?;
     
     let query_result = session
         .execute_unpaged(&prepared, values)
-        .await
-        .map_err(|e| map_error(Box::new(e)))?;
+        .await?;
 
     Ok(query_result)
 }
 
-fn map_error(cassandra_error: Box<dyn std::error::Error>) -> InternalError {
-    error!("Error: {:?}", cassandra_error);
-    InternalError
-}
+
 
 pub async fn fetch(service_state: Arc<ServiceState>, test_id: String) -> Result<Option<TestRow>, InternalError> {
 
@@ -44,8 +39,8 @@ pub async fn fetch(service_state: Arc<ServiceState>, test_id: String) -> Result<
     let result = execute(&service_state.session, FETCH_TEST_CQL, cql_values).await?;
 
     let test_option = result
-        .into_rows_result().map_err(|e| map_error(Box::new(e)))?
-        .maybe_first_row().map_err(|e| map_error(Box::new(e)))?;
+        .into_rows_result()?
+        .maybe_first_row()?;
 
     Ok(test_option)
 }
